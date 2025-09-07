@@ -5,7 +5,7 @@ from rasterio.windows import from_bounds
 from pyproj import Transformer
 
 # downtown bbox in lat/lon (minx, miny, maxx, maxy)
-downtown_latlon = (-93.285, 44.96, -93.25, 44.99)
+downtown_latlon = (-93.6145, 44.7716, -92.9814, 45.1719)
 
 # transformer from WGS84 -> UTM Zone 15N
 transformer = Transformer.from_crs("EPSG:4326", "EPSG:32615", always_xy=True)
@@ -17,10 +17,10 @@ maxx, maxy = transformer.transform(downtown_latlon[2], downtown_latlon[3])
 downtown_utm = (minx, miny, maxx, maxy)
 print("Downtown bbox in UTM:", downtown_utm)
 
-
 # Replace extreme values / NoData with np.nan
 # You can check what the NoData value is from the raster profile
 with rasterio.open("output.tif") as src:
+    print(src)
     nodata = src.nodata
     window = from_bounds(*downtown_utm, src.transform)
     downtown_data = src.read(1, window=window)
