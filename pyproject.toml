@@ -10,6 +10,8 @@ dependencies = [
     "geopandas>=1.1.1",
     "matplotlib>=3.10.6",
     "rasterio>=1.4.3",
+    "scikit-learn>=1.7.1",
     "seaborn>=0.13.2",
+    "statsmodels>=0.14.5",
     "tifffile>=2025.8.28",
 ]
