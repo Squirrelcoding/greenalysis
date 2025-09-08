@@ -10,5 +10,6 @@ dependencies = [
     "geopandas>=1.1.1",
     "matplotlib>=3.10.6",
     "rasterio>=1.4.3",
+    "seaborn>=0.13.2",
     "tifffile>=2025.8.28",
 ]
