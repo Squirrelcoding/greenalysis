@@ -9,7 +9,4 @@ wheels/
 # Virtual environments
 .venv
 
-output.tif
-hennepin.tif
-new_heat.tif
-output2.tif
+*.tif
