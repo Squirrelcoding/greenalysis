@@ -1,39 +1,52 @@
-import numpy as np
-import matplotlib.pyplot as plt
 import rasterio
-from rasterio.windows import from_bounds
+from rasterio.transform import rowcol
 from pyproj import Transformer
+import numpy as np
 
-# downtown bbox in lat/lon (minx, miny, maxx, maxy)
-downtown_latlon = (-93.6145, 44.7716, -92.9814, 45.1719)
+from generate_points import generate_point, generate_window
 
-# transformer from WGS84 -> UTM Zone 15N
-transformer = Transformer.from_crs("EPSG:4326", "EPSG:32615", always_xy=True)
+hennepin = rasterio.open("data/hennepin.tif")
+green = rasterio.open("data/3.tif")
 
-# transform each corner
-minx, miny = transformer.transform(downtown_latlon[0], downtown_latlon[1])
-maxx, maxy = transformer.transform(downtown_latlon[2], downtown_latlon[3])
+print(hennepin.meta)
 
-downtown_utm = (minx, miny, maxx, maxy)
-print("Downtown bbox in UTM:", downtown_utm)
+h_to_wgs84 = Transformer.from_crs(hennepin.crs, "EPSG:4326", always_xy=True)
+h_from_wgs84 = Transformer.from_crs("EPSG:4326", hennepin.crs, always_xy=True)
 
-# Replace extreme values / NoData with np.nan
-# You can check what the NoData value is from the raster profile
-with rasterio.open("output.tif") as src:
-    print(src)
-    nodata = src.nodata
-    window = from_bounds(*downtown_utm, src.transform)
-    downtown_data = src.read(1, window=window)
+g_to_wgs84 = Transformer.from_crs(green.crs, "EPSG:4326", always_xy=True)
+g_from_wgs84 = Transformer.from_crs("EPSG:4326", green.crs, always_xy=True)
 
-# Mask NoData values
-if nodata is not None:
-    downtown_data = np.where(downtown_data == nodata, np.nan, downtown_data)
+h_band = hennepin.read(1)
+g_band = green.read(1)
 
-# Or clip extreme values if you don’t know nodata
-downtown_data = np.clip(downtown_data, -50, 50)  # temperatures in Celsius, adjust as needed
+data = {
+    "heat": [],
+    "green": [],
+    "lat": [],
+    "lon": []
+}
 
-# Plot
-plt.imshow(downtown_data, cmap="inferno")
-plt.colorbar(label="Temperature")
-plt.title("Downtown Minneapolis Heatmap")
-plt.show()
+vals = 0
+
+while vals < 1_000:
+    
+    # Generate random coordinates
+    lat, lon = generate_point(green)
+
+    # Get windows
+    green_window = generate_window(green, g_from_wgs84, lon, lat)
+    heat_window = generate_window(hennepin, h_from_wgs84, lon, lat)
+
+    green_data = green.read(1, window=green_window)
+    heat_data = hennepin.read(1, window=heat_window)
+    heat_data = np.nan_to_num(heat_data, nan=0.0, posinf=0.0, neginf=0.0)
+
+    if not (np.isfinite(heat_data.sum()) and np.isfinite(green_data.sum())):
+        print("GOT ILLEGAL VALUE")
+        continue
+    print("Here!")
+    vals += 1
+    data["heat"].append(heat_data.sum())
+    data["green"].append(green_data.sum())
+    data["lat"].append(lat)
+    data["lon"].append(lon)
